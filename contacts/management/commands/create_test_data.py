@@ -12,7 +12,6 @@ from django.core.management.base import BaseCommand
 
 
 # Current app modules
-from .constants import SUPERVISOR_EMAIL
 from .builders import DatabaseEngineer
 
 
@@ -47,7 +46,7 @@ class Command(BaseCommand):
                 self.stdout.write("=== Creating The Youbee Test Company ===")
 
             contact_book_start_time = time.time()
-            deng.construct_contact_book(entity_id=str(i))
+            deng.construct_contact_book(entity_id=i)
 
             if verbosity >= NORMAL:
                 self.stdout.write("=== Created in %.2f seconds ===" % (time.time() - contact_book_start_time))

@@ -13,15 +13,6 @@ from django.db import models
 #  Current app modules
 
 
-class RegistrationDataMixin:
-
-    created_by = models.PositiveBigIntegerField(editable=False)
-    created_on = models.DateTimeField(auto_now_add=True, editable=False)
-
-    modified_by = models.PositiveBigIntegerField(editable=False)
-    modified_on = models.DateTimeField(auto_now=True, editable=False)
-
-
 class MutationInfoMixin:
 
     success = graphene.Boolean()

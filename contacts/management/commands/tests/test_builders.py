@@ -6,23 +6,20 @@
 import pytest
 
 # Django modules
-from django.core.exceptions import ObjectDoesNotExist
 
 # Django apps
-from contacts.models import PersonGroup, PersonTitle
+from contacts.models import PersonGroup, PersonTitle, Person
 from contacts.constants import PERSON_GROUPS_MASTER_LIST, PERSON_TITLES_MASTER_LIST
 
 #  Current app modules
-from ..constants import MIN_DEPARTMENT_COUNT, STANDARD_DEPARTMENT_COUNT, MAX_DEPARTMENT_COUNT, \
-    MIN_EMPLOYEE_COUNT, STANDARD_EMPLOYEE_COUNT, MAX_EMPLOYEE_COUNT, \
-    MIN_CONTACT_COUNT, STANDARD_CONTACT_COUNT, MAX_CONTACT_COUNT
+from ..constants import STANDARD_DEPARTMENT_COUNT, STANDARD_EMPLOYEE_COUNT, STANDARD_CONTACT_COUNT
 from ..builders import ContactBuilder, DatabaseEngineer
 
 
 class BaseTestBuilder:
     @pytest.fixture
     def cb(self, db):
-        return ContactBuilder('1')
+        return ContactBuilder(1)
 
 
 class TestContactBuilder(BaseTestBuilder):
@@ -85,12 +82,12 @@ class TestContactBuilder(BaseTestBuilder):
     def test_fake_person_data(self, cb):   # test passed
         data = cb.fake_person_data()
         assert data is not None
-        assert data['title'] != ''
+        assert data['title'] is not None
         assert data['first_name'] != ''
         assert data['last_name'] != ''
         assert data['gender'] != ''
         assert data['partner'] != ''
-        assert data['group'] != ''
+        assert data['group'] is not None
         assert data['created_by'] != ''
         assert data['entity'] != ''
         assert data['department'] != ''
@@ -105,7 +102,25 @@ class TestContactBuilder(BaseTestBuilder):
 
     def test_fake_location(self, cb):
         data = cb.fake_person_location()
-        assert data['location'] is not None
+        assert data is not None
+        assert data['address'] is not None
+        assert data['city'] is not None
+        assert data['country'] is not None
+        assert data['zip_code'] is not None
+        assert data['phone'] is not None
+
+    def test_fake_organisation(self, cb):
+        data = cb.fake_person_organisation()
+        assert data['organisation'] is not None
+        assert data['organisation']['name'] is not None
+        assert data['organisation']['nickname'] is not None
+        assert data['organisation']['phone_number'] is not None
+        assert data['organisation']['web_site'] is not None
+        assert data['organisation']['location'] is not None
+
+    def test_fake_function(self, cb):
+        data = cb.fake_person_function()
+        assert data['function'] is not None
 
     def test_get_random_group(self, cb):
         assert cb.get_random_group() is not None
@@ -119,10 +134,15 @@ class TestContactBuilder(BaseTestBuilder):
     def test_get_random_employee_id(self, cb):
         assert cb.get_random_employee_id() is not None
 
-    def test_build(self, cb):
-        cb.set_entity_id('1')
-        c = cb.build()
+    def test_build_contact(self, cb):
+        cb.set_entity_id(1)
+        c = cb.build_contact()
         assert c is not None
+
+    def test_build(self, cb):
+        cb.set_entity_id(1)
+        n = cb.build()
+        assert Person.objects.all().count() == n
 
 
 class TestDatabaseEngineer:  # tests passed

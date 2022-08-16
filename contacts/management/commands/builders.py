@@ -3,11 +3,13 @@
 # System libraries
 
 # Third-party libraries
+from phone_gen import PhoneNumber as pn
 
 # Django modules
 
 # Django apps
-from contacts.models import PersonTitle, PersonGroup
+from contacts.models import PersonTitle, PersonGroup, Person, PhoneNumber, EmailAddress, Location, Organisation, \
+    PersonFunction
 
 #  Current app modules
 from .base_builder import BaseFakeDataBuilder
@@ -56,34 +58,153 @@ class ContactBuilder(BaseFakeDataBuilder):
         return self.employee_count
 
     def fake_person_data(self):
+        title_id = self.get_random_title()
+        group_id = self.get_random_group()
+        employee_id = self.get_random_employee_id()
+
         person_details = {
-            'title': self.get_random_title(),
+            'title': PersonTitle.objects.get(pk=title_id),
             'first_name': self.faker.first_name(),
             'last_name': self.faker.last_name(),
             'gender': self.faker.random_choices(elements=('M', 'F', 'U')),
             'partner': self.faker.random_choices(elements=('M', 'F', 'S', 'U')),
-            'group': self.get_random_group(),
-            'created_by': self.get_random_employee_id(),
+            'person_group': PersonGroup.objects.get(pk=group_id),
+            'created_by': employee_id,
+            'modified_by': employee_id,
             'entity': self.entity_id,
             'department': self.get_random_department_id(),
         }
 
         return person_details
 
+    def fake_person_phone_number(self):
+        phone_number = pn('GB')
+
+        person_phone_number = {
+            'person': '',
+            'phone_number': phone_number.get_number(),
+        }
+
+        return person_phone_number
+
+    def fake_person_email_address(self):
+        person_email_address = {
+            'person': '',
+            'email_address': self.faker.ascii_email(),
+        }
+
+        return person_email_address
+
+    def fake_person_location(self):
+        country_code = self.faker.country_code()
+
+        person_location = {
+            'person': '',
+            'address': self.faker.street_address(),
+            'city': self.faker.city(),
+            'country': country_code,
+            'zip_code': self.faker.postcode(),
+            'phone': pn(country_code).get_number()
+        }
+
+        return person_location
+
+    def fake_organisation_location(self):
+        country_code = self.faker.country_code()
+        organisation_location = {
+            'address': self.faker.street_address(),
+            'city': self.faker.city(),
+            'country': country_code,
+            'zip_code': self.faker.postcode(),
+            'phone': pn(country_code).get_national(),
+            'person': '',
+        }
+
+        return organisation_location
+
+    def fake_person_organisation(self):
+        location = self.fake_organisation_location()
+        person_organisation = {
+            'organisation': {
+                'name': self.faker.company(),
+                'nickname': self.faker.catch_phrase(),
+                'phone_number': pn(location['country']).get_national(),
+                'email_address': self.faker.ascii_company_email(),
+                'web_site': self.faker.url(),
+                'person': '',
+                'location': '',
+            },
+            'location': location,
+        }
+        return person_organisation
+
+    def fake_person_function(self):
+        person_function = {
+            'function': self.faker.job(),
+            'person': '',
+        }
+        return person_function
+
     def get_random_group(self):
-        return str(self.faker.random_int(min=1, max=self.group_count))
+        return self.faker.random_int(min=1, max=self.group_count)
 
     def get_random_title(self):
         return str(self.faker.random_int(min=1, max=self.title_count))
 
     def get_random_department_id(self):
-        return str(self.faker.random_int(min=1, max=self.department_count))
+        return self.faker.random_int(min=1, max=self.department_count)
 
     def get_random_employee_id(self):
-        return str(self.faker.random_int(min=1, max=self.employee_count))
+        return self.faker.random_int(min=1, max=self.employee_count)
+
+    def build_contact(self):
+        # Create the new person
+        new_contact = Person.objects.create(**self.fake_person_data())
+
+        # Create the phone number of the person
+        phone_number = self.fake_person_phone_number()
+        phone_number['person'] = new_contact
+        PhoneNumber.objects.get_or_create(**phone_number)
+
+        # Create the person's email address
+        email_address = self.fake_person_email_address()
+        email_address['person'] = new_contact
+        EmailAddress.objects.create(**email_address)
+
+        # Create the person's location
+        location = self.fake_person_location()
+        location['person'] = new_contact
+        p, _ = PhoneNumber.objects.get_or_create(person=new_contact, phone_number=location['phone'])
+        location['phone'] = p
+        Location.objects.create(**location)
+
+        # Create the organisation the person belongs to
+        organisation = self.fake_person_organisation()
+        organisation['organisation']['person'] = new_contact
+        p, _ = PhoneNumber.objects.get_or_create(person=new_contact, phone_number=organisation['organisation']['phone_number'])
+        organisation['organisation']['phone_number'] = p
+        organisation['location']['person'] = new_contact
+        p, _ = PhoneNumber.objects.get_or_create(person=new_contact, phone_number=organisation['location']['phone'])
+        organisation['location']['phone'] = p
+
+        location = Location.objects.create(**organisation['location'])
+        organisation['organisation']['location'] = location
+        e, _ = EmailAddress.objects.get_or_create(person=new_contact, email_address=organisation['organisation']['email_address'])
+        organisation['organisation']['email_address'] = e
+        Organisation.objects.create(**organisation['organisation'])
+
+        # Create the function of the person
+        person_function = self.fake_person_function()
+        person_function['person'] = new_contact
+        PersonFunction.objects.create(**person_function)
+
+        return new_contact
 
     def build(self):
-        return
+        for _ in range(self.contact_count):
+            self.build_contact()
+
+        return self.contact_count
 
 
 class DatabaseEngineer:
@@ -105,8 +226,7 @@ class DatabaseEngineer:
         if employee_count is not None:
             self.builder.set_employee_count(employee_count)
 
-        return self.builder.build()
+        if contact_count is not None:
+            self.builder.set_contact_count(contact_count)
 
-    @property
-    def contact(self):
-        return self.builder.contact
+        return self.builder.build()

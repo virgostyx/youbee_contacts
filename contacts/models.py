@@ -13,20 +13,28 @@ from autoslug import AutoSlugField
 
 # Django modules
 from django.db import models
-from django.db.models import Model
 
 # Django apps
 
 # Current-app modules
 from .constants import PERSON_TITLES_MASTER_LIST, PERSON_GROUPS_MASTER_LIST
-from .mixins import RegistrationDataMixin
 
 
 def _person_slug_fields(instance):
     return "{0}-{1}".format(instance.first_name, instance.last_name)
 
 
-class PersonGroup(Model, RegistrationDataMixin):
+class AuditModel(models.Model):
+    class Meta:
+        abstract = True
+
+    created_on = models.DateTimeField(auto_now_add=True, editable=False)
+    modified_on = models.DateTimeField(auto_now=True, editable=False)
+    created_by = models.PositiveBigIntegerField(editable=False)
+    modified_by = models.PositiveBigIntegerField(editable=False)
+
+
+class PersonGroup(models.Model):
     class Meta:
         permissions = [('unlink_persongroup', 'Can unlink person group'), ]
         unique_together = [['entity', 'name']]
@@ -46,7 +54,7 @@ class PersonGroup(Model, RegistrationDataMixin):
         return self.name
 
 
-class PersonTitle(Model, RegistrationDataMixin):
+class PersonTitle(models.Model):
     class Meta:
         permissions = [('unlink_persontitle', 'Can unlink person title'), ]
         unique_together = [['entity', 'title']]
@@ -66,7 +74,7 @@ class PersonTitle(Model, RegistrationDataMixin):
         return self.title
 
 
-class Person(Model, RegistrationDataMixin):
+class Person(AuditModel):
     class Meta:
         permissions = [('unlink_person', 'Can unlink person'), ]
         unique_together = [['entity', 'first_name', 'last_name', 'sub_name']]
@@ -140,7 +148,7 @@ class Person(Model, RegistrationDataMixin):
                title=self.title, first_name=self.first_name, name=self.last_name)
 
 
-class PhoneNumber(Model, RegistrationDataMixin):
+class PhoneNumber(models.Model):
     class Meta:
         unique_together = ['phone_number']
         ordering = ['phone_number']
@@ -150,7 +158,7 @@ class PhoneNumber(Model, RegistrationDataMixin):
     phone_number = PhoneNumberField()
 
 
-class EmailAddress(Model, RegistrationDataMixin):
+class EmailAddress(models.Model):
     class Meta:
         unique_together = ['email_address']
         ordering = ['email_address']
@@ -160,7 +168,7 @@ class EmailAddress(Model, RegistrationDataMixin):
     email_address = models.EmailField()
 
 
-class Location(Model, RegistrationDataMixin):
+class Location(models.Model):
     class Meta:
         ordering = ['address']
 
@@ -175,7 +183,7 @@ class Location(Model, RegistrationDataMixin):
     phone = models.ForeignKey(PhoneNumber, on_delete=models.DO_NOTHING, related_name='location_phone_numbers')
 
 
-class Organisation(Model, RegistrationDataMixin):
+class Organisation(models.Model):
     class Meta:
         unique_together = ['name']
 
@@ -192,7 +200,7 @@ class Organisation(Model, RegistrationDataMixin):
     location = models.ForeignKey(Location, on_delete=models.DO_NOTHING, related_name='organisation_locations')
 
 
-class PersonFunction(Model, RegistrationDataMixin):
+class PersonFunction(models.Model):
 
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='functions')
 
