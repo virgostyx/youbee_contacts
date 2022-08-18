@@ -41,9 +41,9 @@ class Command(BaseCommand):
         # Do the job
         deng = DatabaseEngineer()
 
-        for i in range(n):
+        for i in range(1, n+1):
             if verbosity >= NORMAL:
-                self.stdout.write("=== Creating The Youbee Test Company ===")
+                self.stdout.write("=== Creating the entity no {} ===".format(i))
 
             contact_book_start_time = time.time()
             deng.construct_contact_book(entity_id=i)

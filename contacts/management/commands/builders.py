@@ -66,8 +66,8 @@ class ContactBuilder(BaseFakeDataBuilder):
             'title': PersonTitle.objects.get(pk=title_id),
             'first_name': self.faker.first_name(),
             'last_name': self.faker.last_name(),
-            'gender': self.faker.random_choices(elements=('M', 'F', 'U')),
-            'partner': self.faker.random_choices(elements=('M', 'F', 'S', 'U')),
+            'gender': self.faker.random_element(elements=('M', 'F', 'U')),
+            'partner': self.faker.random_element(elements=('M', 'F', 'S', 'U')),
             'person_group': PersonGroup.objects.get(pk=group_id),
             'created_by': employee_id,
             'modified_by': employee_id,
@@ -169,7 +169,7 @@ class ContactBuilder(BaseFakeDataBuilder):
         # Create the person's email address
         email_address = self.fake_person_email_address()
         email_address['person'] = new_contact
-        EmailAddress.objects.create(**email_address)
+        EmailAddress.objects.get_or_create(**email_address)
 
         # Create the person's location
         location = self.fake_person_location()
@@ -181,7 +181,8 @@ class ContactBuilder(BaseFakeDataBuilder):
         # Create the organisation the person belongs to
         organisation = self.fake_person_organisation()
         organisation['organisation']['person'] = new_contact
-        p, _ = PhoneNumber.objects.get_or_create(person=new_contact, phone_number=organisation['organisation']['phone_number'])
+        p, _ = PhoneNumber.objects.get_or_create(person=new_contact,
+                                                 phone_number=organisation['organisation']['phone_number'])
         organisation['organisation']['phone_number'] = p
         organisation['location']['person'] = new_contact
         p, _ = PhoneNumber.objects.get_or_create(person=new_contact, phone_number=organisation['location']['phone'])
@@ -189,7 +190,8 @@ class ContactBuilder(BaseFakeDataBuilder):
 
         location = Location.objects.create(**organisation['location'])
         organisation['organisation']['location'] = location
-        e, _ = EmailAddress.objects.get_or_create(person=new_contact, email_address=organisation['organisation']['email_address'])
+        e, _ = EmailAddress.objects.get_or_create(person=new_contact,
+                                                  email_address=organisation['organisation']['email_address'])
         organisation['organisation']['email_address'] = e
         Organisation.objects.create(**organisation['organisation'])
 

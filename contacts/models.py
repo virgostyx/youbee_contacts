@@ -150,7 +150,7 @@ class Person(AuditModel):
 
 class PhoneNumber(models.Model):
     class Meta:
-        unique_together = ['phone_number']
+        # unique_together = ['phone_number']
         ordering = ['phone_number']
 
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='phone_numbers')
@@ -160,7 +160,7 @@ class PhoneNumber(models.Model):
 
 class EmailAddress(models.Model):
     class Meta:
-        unique_together = ['email_address']
+        # unique_together = ['email_address']
         ordering = ['email_address']
 
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='email_addresses')
@@ -184,8 +184,8 @@ class Location(models.Model):
 
 
 class Organisation(models.Model):
-    class Meta:
-        unique_together = ['name']
+#    class Meta:
+        # unique_together = ['name']
 
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='organisations')
 
